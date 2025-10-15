@@ -5,34 +5,33 @@ nodes:
   extraPortMappings:
 
   # Sonarqube
-  - containerPort: 40900
+  - containerPort: 30900
     hostPort: 9000
 
   # Dependency Track Frontend
-  - containerPort: 40801
+  - containerPort: 30801
     hostPort: 8081
 
   # Dependency Track API
-  - containerPort: 40101
+  - containerPort: 30101
     hostPort: 4001
 
   # Faraday
-  - containerPort: 40802
+  - containerPort: 30802
     hostPort: 8082
 
   # Archery
-  - containerPort: 40803
+  - containerPort: 30803
     hostPort: 8083
 
   # Nodegoat
-  - containerPort: 40804
+  - containerPort: 30804
     hostPort: 8084
 
   # Grafana
   - containerPort: 30805
-    hostPort: 4000
+    hostPort: 3000
 
   # Prometheus
-  - containerPort: 40806
+  - containerPort: 30806
     hostPort: 9090
-
