@@ -25,19 +25,19 @@ NC := '\033[0m'
   docker compose stop
 
 
-# Start nodegoat in k8s
-start-nodegoat-k8s:
+# Start juiceshop in k8s
+start-juiceshop-k8s:
   #!/usr/bin/env bash
   set -euo pipefail
-  NAMESPACE="nodegoat"
+  NAMESPACE="juiceshop"
   kubectl create ns ${NAMESPACE} || true
-  kubectl apply -n ${NAMESPACE} -f k8s/nodegoat/
-# Start nodegoat in k8s
-stop-nodegoat-k8s:
+  kubectl apply -n ${NAMESPACE} -f k8s/juiceshop/
+# Start juiceshop in k8s
+stop-juiceshop-k8s:
   #!/usr/bin/env bash
   set -euo pipefail
-  NAMESPACE="nodegoat"
-  kubectl delete -n ${NAMESPACE} -f k8s/nodegoat/
+  NAMESPACE="juiceshop"
+  kubectl delete -n ${NAMESPACE} -f k8s/juiceshop/
 
 
 # Start sonarqube
