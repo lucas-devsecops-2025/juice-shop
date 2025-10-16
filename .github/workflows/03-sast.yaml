@@ -69,7 +69,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install sonar-tools
-        run: pip install sonar-tools --no-binary :all:
+        run: pip install sonar-tools --no-binary :all
 
       - name: Export SonarQube findings to SARIF
         env:
