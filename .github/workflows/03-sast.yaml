@@ -28,7 +28,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://sonarqube-sonarqube.sonarqube:9000
-          SONAR_PROJECT_KEY: app
+          SONAR_PROJECT_KEY: frontend
         run: |
           docker run \
             --network host \
@@ -38,8 +38,8 @@ jobs:
             -e SONAR_TOKEN="${SONAR_TOKEN}" \
             -v "$(pwd):/usr/src" \
             sonarsource/sonar-scanner-cli \
-              -Dsonar.projectKey=app \
-              -Dsonar.projectName="DevSecOps App" \
+              -Dsonar.projectKey=frontend \
+              -Dsonar.projectName="DevSecOps frontend" \
               -Dsonar.sources=${SONAR_PROJECT_KEY}
 
       - name: Check Quality Gate
@@ -48,7 +48,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://sonarqube-sonarqube.sonarqube:9000
-          SONAR_PROJECT_KEY: app
+          SONAR_PROJECT_KEY: frontend
         run: |
           sleep 10
           STATUS=$(curl -s -u ${SONAR_TOKEN}: -G \
@@ -75,7 +75,7 @@ jobs:
         env:
           SONAR_USER_TOKEN: ${{ secrets.SONAR_USER_TOKEN }}
           SONAR_HOST_URL: http://sonarqube-sonarqube.sonarqube:9000
-          SONAR_PROJECT_KEY: app
+          SONAR_PROJECT_KEY: frontend
         run: |
           sonar-findings-export \
             -u ${SONAR_HOST_URL} \
