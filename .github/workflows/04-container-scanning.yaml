@@ -74,7 +74,7 @@ jobs:
       - name: Get Docker tag
         id: docker-tags
         run: |
-          TAG=$(.github/scripts/get-docker-tag.sh "${{ github.head_ref || github.ref_name }}")
+          chmod +x TAG=$(.github/scripts/get-docker-tag.sh "${{ github.head_ref || github.ref_name }}")
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Docker pull
