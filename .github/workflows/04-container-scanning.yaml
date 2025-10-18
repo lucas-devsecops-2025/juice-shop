@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/juiceshop:${{ steps.docker-tags.outputs.tag }}
           platforms: linux/amd64,linux/arm64
 
   container-scanning:
@@ -78,14 +78,14 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Docker pull
-        run: docker pull ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+        run: docker pull ${{ vars.DOCKERHUB_USERNAME }}/juiceshop:${{ steps.docker-tags.outputs.tag }}
 
       - name: Run Trivy Scan (Table)
         id: trivy-scan
         continue-on-error: true
         uses: aquasecurity/trivy-action@0.33.1
         with:
-          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/juiceshop:${{ steps.docker-tags.outputs.tag }}
           scan-type: image
           hide-progress: true
           format: table
@@ -99,7 +99,7 @@ jobs:
         continue-on-error: true
         uses: aquasecurity/trivy-action@0.33.1
         with:
-          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/juiceshop:${{ steps.docker-tags.outputs.tag }}
           scan-type: image
           hide-progress: true
           format: sarif

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <configuration>
     <context>
-        <name>nodegoat</name>
+        <name>juiceshop</name>
         <desc/>
         <inscope>true</inscope>
         <incregexes>http://localhost:4000.*</incregexes>
