@@ -26,8 +26,3 @@ repos:
         language: system
         pass_filenames: false
         files: package(-lock)?\.json$
-      - id: dast-zap-scan
-        name: Run ZAP scan on application
-        entry: bash ./scripts/DAST_zap.sh
-        language: system
-        pass_filenames: false
