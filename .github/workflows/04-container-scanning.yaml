@@ -1,0 +1,137 @@
+name: 04-container-scanning
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: [arc-runner-set]
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Prepare Docker tags
+        id: docker-tags
+        run: |
+          TAG=$(.github/scripts/get-docker-tag.sh "${{ github.head_ref || github.ref_name }}")
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+          platforms: linux/amd64,linux/arm64
+
+  container-scanning:
+    name: Container Scanning - ${{ matrix.scan-type }}
+    runs-on: [arc-runner-set]
+    timeout-minutes: 15
+    needs: build
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        scan-type: [vulnerability, license]
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Get Docker tag
+        id: docker-tags
+        run: |
+          TAG=$(.github/scripts/get-docker-tag.sh "${{ github.head_ref || github.ref_name }}")
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Docker pull
+        run: docker pull ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+
+      - name: Run Trivy Scan (Table)
+        id: trivy-scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+          scan-type: image
+          hide-progress: true
+          format: table
+          output: trivy-${{ matrix.scan-type }}.txt
+          exit-code: 1
+          vuln-type: os,library
+          severity: ${{ matrix.scan-type == 'vulnerability' && 'CRITICAL,HIGH' || 'UNKNOWN,CRITICAL,HIGH' }}
+          scanners: ${{ matrix.scan-type == 'vulnerability' && 'vuln' || 'license' }}
+
+      - name: Run Trivy Scan (SARIF)
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/nodegoat:${{ steps.docker-tags.outputs.tag }}
+          scan-type: image
+          hide-progress: true
+          format: sarif
+          output: trivy-${{ matrix.scan-type }}.sarif
+          vuln-type: os,library
+          severity: ${{ matrix.scan-type == 'vulnerability' && 'CRITICAL,HIGH' || 'UNKNOWN,CRITICAL,HIGH' }}
+          scanners: ${{ matrix.scan-type == 'vulnerability' && 'vuln' || 'license' }}
+          limit-severities-for-sarif: ${{ matrix.scan-type == 'vulnerability' }}
+
+      - name: Upload Trivy SARIF
+        if: always() && hashFiles('trivy-${{ matrix.scan-type }}.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.scan-type }}.sarif
+          category: trivy-container-${{ matrix.scan-type }}
+
+      - name: Publish Trivy Output to Summary
+        if: always()
+        run: |
+          if [[ -s trivy-${{ matrix.scan-type }}.txt ]]; then
+            {
+              echo "### ${{ matrix.scan-type == 'vulnerability' && 'Vulnerability' || 'License' }} Scanning Results"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat trivy-${{ matrix.scan-type }}.txt
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail if issues found
+        if: steps.trivy-scan.outcome == 'failure'
+        run: exit 1
