@@ -79,9 +79,6 @@ cd ~
     - [2.2 Criar Repositório Pessoal](#22-criar-repositório-pessoal)
     - [2.3 Habilitar GitHub Advanced Security](#23-habilitar-github-advanced-security)
   - [3. Setup do Repositório](#3-setup-do-repositório)
-    - [3.1 Clonar Repositório Pessoal](#31-clonar-repositório-pessoal)
-    - [3.2 Copiar Código Inicial](#32-copiar-código-inicial)
-    - [3.3 Testar Aplicação](#33-testar-aplicação)
   - [4. Pre-commit Hooks](#4-pre-commit-hooks)
     - [4.1 Copiar Configurações](#41-copiar-configurações)
     - [4.2 Ativar Hooks](#42-ativar-hooks)
@@ -228,12 +225,9 @@ docker compose version
 ```bash
 # Ir para o diretório home
 cd ~
-
 # Clonar repositório do projeto
 git clone https://github.com/lucas-devsecops-2025/juice-shop
 cd juice-shop
-
-
 # Instalar TODAS as ferramentas automaticamente
 just setup
 ```
@@ -254,45 +248,7 @@ source ~/.bashrc
 # ou reiniciar terminal
 ```
 
-## 3. Setup do Repositório
-
-### 3.1 Clonar Repositório Pessoal
-
-```bash
-# Voltar ao diretório home
-cd ~
-
-# Clonar seu repositório pessoal (será o $STUDENT_REPO)
-git clone https://github.com/<sua-org>/<seu-nome>-nodegoat
-
-# Exemplo: git clone https://github.com/cesar-devsecops-joao/joao-nodegoat
-
-# Ou usar a variável para especificar o diretório local:
-# git clone https://github.com/<sua-org>/<seu-nome>-nodegoat $STUDENT_REPO
-```
-
-### 3.2 Copiar Código Inicial
-
-```bash
-# Do diretório do instrutor
-cd $INSTRUCTOR_REPO
-
-# Copiar arquivos para seu repo
-cp -r app $STUDENT_REPO/
-cp -r config $STUDENT_REPO/
-cp package.json package-lock.json server.js Dockerfile docker-compose.yaml .dockerignore .gitignore .justfile $STUDENT_REPO/
-
-# Ir para seu repo
-cd $STUDENT_REPO
-
-# Commit inicial
-git add .
-git commit -m "feat: initial NodeGoat setup"
-git push origin main
-```
-
-### 3.3 Testar Aplicação
-
+## 3. Testar Aplicação
 ```bash
 # Subir app
 just start
@@ -376,8 +332,6 @@ k9s version
 ### 6.2 Deploy Runner
 
 ```bash
-# No repo do instrutor
-cd $INSTRUCTOR_REPO
 
 # Criar arquivo com credenciais
 # Substitua:
@@ -426,7 +380,7 @@ git commit -m "test: verify runner connectivity"
 git push origin test-runner-connectivity
 ```
 
-### 7.3 Verificar Execução
+### 7.2 Verificar Execução
 
 **No GitHub:**
 1. Pull Requests → Abrir PR criado
@@ -523,7 +477,7 @@ just start-dependency-track
 4. Value: colar API Key
 5. Add secret
 
-### 9.4 Testar SCA
+### 9.3 Testar SCA
 
 ```bash
 # Criar branch de teste
