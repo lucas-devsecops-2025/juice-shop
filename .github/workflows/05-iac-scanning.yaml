@@ -1,0 +1,145 @@
+name: 05-iac-scanning
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  iac-scanning:
+    name: IaC Scanning - ${{ matrix.tool }}
+    runs-on: [arc-runner-set]
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: [trivy, checkov]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Run Trivy IaC Scan
+        if: matrix.tool == 'trivy'
+        id: trivy-scan
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          hide-progress: true
+          format: table
+          output: trivy-iac.txt
+          exit-code: 1
+          scanners: misconfig
+          severity: CRITICAL,HIGH
+
+      - name: Run Trivy IaC Scan (SARIF)
+        if: matrix.tool == 'trivy'
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          hide-progress: true
+          format: sarif
+          output: trivy-iac.sarif
+          scanners: misconfig
+          severity: CRITICAL,HIGH
+          limit-severities-for-sarif: true
+
+      - name: Upload Trivy SARIF
+        if: always() && matrix.tool == 'trivy' && hashFiles('trivy-iac.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-iac.sarif
+          category: trivy-iac
+
+      - name: Publish Trivy Output to Summary
+        if: always() && matrix.tool == 'trivy'
+        run: |
+          if [[ -s trivy-iac.txt ]]; then
+            {
+              echo "### Trivy IaC Scanning Results"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat trivy-iac.txt
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Setup Python
+        if: matrix.tool == 'trivy'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Upload Trivy Results to ArcherySec
+        if: matrix.tool == 'trivy'
+        continue-on-error: true
+        run: |
+          # Generate JSON for ArcherySec
+          docker run --rm \
+            -v "$(pwd):/src" \
+            aquasec/trivy:latest \
+            fs /src \
+            --scanners misconfig \
+            --format json \
+            --output /src/trivy-archery.json
+
+          pip install archerysec-cli setuptools
+
+          PROJECT_ID=$(archerysec-cli -h http://archerysec-app.archerysec \
+                        -t "${{ secrets.ARCHERYSEC_APIKEY }}" \
+                        --createproject \
+                        --project_name="app" \
+                        --project_disc="app project" \
+                        |grep project_id \
+                        |jq -r '.project_id')
+
+          archerysec-cli -h http://archerysec-app.archerysec \
+            -t "${{ secrets.ARCHERYSEC_APIKEY }}" \
+            --project="${PROJECT_ID}" \
+            --scanner=trivy \
+            --target=${{ github.head_ref || github.ref_name }} \
+            --upload \
+            --file-type=JSON \
+            -p trivy-archery.json
+
+      - name: Run Checkov IaC Scan
+        if: matrix.tool == 'checkov'
+        id: checkov-scan
+        continue-on-error: true
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: all
+          output_format: cli,sarif
+          output_file_path: console,checkov-iac.sarif
+          soft_fail: false
+
+      - name: Upload Checkov SARIF
+        if: always() && matrix.tool == 'checkov' && hashFiles('checkov-iac.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-iac.sarif
+          category: checkov-iac
+
+      - name: Fail if Trivy issues found
+        if: matrix.tool == 'trivy' && steps.trivy-scan.outcome == 'failure'
+        run: exit 1
+
+      - name: Fail if Checkov issues found
+        if: matrix.tool == 'checkov' && steps.checkov-scan.outcome == 'failure'
+        run: exit 1
