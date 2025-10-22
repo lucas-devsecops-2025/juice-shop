@@ -212,19 +212,6 @@ git push origin test-runner-connectivity
 
 ---
 
-### 06 — Build & Deploy (K8s)
-
-1) **Manifests** do app (namespace `nodegoat`, por exemplo).  
-2) **KUBECONFIG** (base64) como secret `KUBECONFIG` para o workflow atuar no cluster.  
-3) PR dispara build e deploy; verifique pods e acesso do serviço.
-
-```bash
-kubectl get pods -n nodegoat
-# App exposto conforme manifesto (Ex.: NodePort/Ingress)
-```
-
----
-
 ## Referência rápida
 
 ```bash
